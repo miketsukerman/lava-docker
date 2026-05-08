@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import io
 import importlib.util
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
+from contextlib import redirect_stderr
 
 import yaml
 
@@ -80,6 +83,13 @@ class TestBspBoardsGen(unittest.TestCase):
         with self.assertRaises(ValueError):
             bsp_boards_gen.build_boards(candidates, {}, "lab-slave-0")
 
+    def test_invalid_slug_warning_emitted(self):
+        args = default_args()
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            bsp_boards_gen.normalize_candidates(fixture_devices(), {}, args)
+        self.assertIn("skip device entry without slug", stderr.getvalue())
+
     def test_registry_client_layer_with_mocked_api(self):
         calls = {"fetched": False}
 
@@ -93,9 +103,11 @@ class TestBspBoardsGen(unittest.TestCase):
             devices = [SimpleNamespace(**entry) for entry in data["registry"]["devices"]]
             return SimpleNamespace(registry=SimpleNamespace(devices=devices))
 
-        original_import = bsp_boards_gen.import_bsp_api
-        bsp_boards_gen.import_bsp_api = lambda: (FakeFetcher, "main", "url", fake_get_registry)
-        try:
+        with patch.object(
+            bsp_boards_gen,
+            "import_bsp_api",
+            return_value=(FakeFetcher, "main", "url", fake_get_registry),
+        ):
             client = bsp_boards_gen.RegistryClient(
                 registry_path=None,
                 remote="https://example.invalid/repo.git",
@@ -104,8 +116,6 @@ class TestBspBoardsGen(unittest.TestCase):
                 local_only=False,
             )
             devices = client.load_devices()
-        finally:
-            bsp_boards_gen.import_bsp_api = original_import
 
         self.assertTrue(calls["fetched"])
         self.assertEqual(len(devices), 4)
@@ -133,6 +143,8 @@ class TestBspBoardsGen(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(ret.returncode, 0, msg=ret.stdout + "\n" + ret.stderr)
+            self.assertTrue((out_dir / "local" / "docker-compose.yml").is_file())
+            self.assertTrue((out_dir / "local" / "lab-slave-0" / "devices").is_dir())
 
 
 if __name__ == "__main__":

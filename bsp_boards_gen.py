@@ -26,8 +26,14 @@ def import_bsp_api():
             ) from exc
 
 
-DEFAULT_BRANCH = "main"
-DEFAULT_REMOTE_URL = "https://github.com/Advantech-EECC/bsp-registry.git"
+def get_default_remote_settings() -> tuple:
+    fallback_branch = "main"
+    fallback_remote_url = "https://github.com/Advantech-EECC/bsp-registry.git"
+    try:
+        _, default_branch, default_remote_url, _ = import_bsp_api()
+        return default_branch, default_remote_url
+    except Exception:
+        return fallback_branch, fallback_remote_url
 
 
 @dataclass
@@ -81,10 +87,11 @@ class RegistryClient:
 
 
 def parse_args() -> argparse.Namespace:
+    default_branch, default_remote_url = get_default_remote_settings()
     parser = argparse.ArgumentParser(description="Generate lava-docker boards.yaml from bsp-registry")
     parser.add_argument("--registry", help="Path to local bsp-registry YAML file")
-    parser.add_argument("--remote", default=DEFAULT_REMOTE_URL, help="Remote bsp-registry git URL")
-    parser.add_argument("--branch", default=DEFAULT_BRANCH, help="Remote bsp-registry branch")
+    parser.add_argument("--remote", default=default_remote_url, help="Remote bsp-registry git URL")
+    parser.add_argument("--branch", default=default_branch, help="Remote bsp-registry branch")
     parser.add_argument("--no-update", action="store_true", help="Do not update remote cached registry")
     parser.add_argument("--local", action="store_true", help="Do not fetch remote registry; use --registry")
 

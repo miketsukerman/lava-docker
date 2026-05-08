@@ -1,0 +1,56 @@
+---
+# boards-overlay.yaml.example
+#
+# Lab-specific hardware-wiring overlay for BSP registry import.
+#
+# Usage:
+#   ./lavalab-gen.py --import-bsp \
+#       --bsp-registry bsp-registry.yaml \
+#       --overlay boards-overlay.yaml \
+#       --output-boards boards-imported.yaml
+#
+# Then include (or copy) boards-imported.yaml into your full boards.yaml.
+#
+# Each entry under 'boards:' creates one LAVA device instance.
+# The 'type' field MUST match a device slug from the BSP registry.
+# All other fields follow the standard lava-docker boards.yaml format.
+# See README.md for the full field reference.
+
+# Default slave for all boards (can be overridden per board).
+slave: lab-slave-0
+
+boards:
+  # -----------------------------------------------------------------------
+  # NXP i.MX8MP example board wired to an FTDI UART and a power controller
+  # -----------------------------------------------------------------------
+  - type: imx8mp-lpddr4-evk     # BSP registry device slug → LAVA device-type
+    name: imx8mp-lpddr4-evk-01  # Optional; auto-generated as <type>-01
+    pdu_generic:
+      hard_reset_command: /usr/local/bin/pdu-ctrl reset 1
+      power_off_command: /usr/local/bin/pdu-ctrl off 1
+      power_on_command: /usr/local/bin/pdu-ctrl on 1
+    uart:
+      idvendor: 0x0403
+      idproduct: 0x6001
+      serial: AK04TU1X
+
+  # -----------------------------------------------------------------------
+  # RSB-3720 example with devpath-based UART identification
+  # -----------------------------------------------------------------------
+  - type: rsb3720
+    name: rsb3720-01
+    pdu_generic:
+      hard_reset_command: /usr/local/bin/acme-cli -s 192.168.66.2 reset 3
+      power_off_command: /usr/local/bin/acme-cli -s 192.168.66.2 switch_off 3
+      power_on_command: /usr/local/bin/acme-cli -s 192.168.66.2 switch_on 3
+    uart:
+      idvendor: 0x0403
+      idproduct: 0x6010
+      devpath: "1.4"
+
+  # -----------------------------------------------------------------------
+  # QEMU virtual device (no PDU, no UART, uses KVM if available)
+  # -----------------------------------------------------------------------
+  - type: qemuarm64
+    name: qemuarm64-01
+    kvm: true

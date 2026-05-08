@@ -1,0 +1,8 @@
+---
+# Overlay that references a device type not in the registry –
+# used to test warning generation.
+slave: lab-slave-0
+
+boards:
+  - type: unknown-board-xyz
+    name: unknown-01

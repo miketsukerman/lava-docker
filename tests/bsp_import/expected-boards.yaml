@@ -1,0 +1,19 @@
+---
+# Expected boards output for tests/bsp_import fixture.
+# Generated from bsp-registry.yaml + overlay.yaml.
+boards:
+  - type: imx8mp-lpddr4-evk
+    name: imx8mp-01
+    pdu_generic:
+      hard_reset_command: /usr/bin/pdu reset 1
+      power_off_command: /usr/bin/pdu off 1
+      power_on_command: /usr/bin/pdu on 1
+    uart:
+      idvendor: 0x0403
+      idproduct: 0x6001
+      serial: AK04TU1X
+    slave: lab-slave-0
+  - type: qemuarm64
+    kvm: true
+    name: qemuarm64-01
+    slave: lab-slave-0

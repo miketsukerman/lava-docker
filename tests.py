@@ -5,6 +5,17 @@ import os
 import subprocess
 import shutil
 import sys
+import unittest
+
+
+def run_bsp_import_tests():
+    """Run bsp_import unit tests and return True on success."""
+    loader = unittest.TestLoader()
+    suite = loader.discover("tests", pattern="test_bsp_import.py")
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    return result.wasSuccessful()
+
 
 with open("tests/tests.yaml", "r") as f:
     tests = yaml.safe_load(f)
@@ -61,3 +72,11 @@ for testname in tests["tests"]:
         if ret.returncode != 0:
             print("ERROR")
             sys.exit(1)
+
+# -------------------------------------------------------------------
+# BSP registry import unit tests (no docker / network required)
+# -------------------------------------------------------------------
+print("\n=== BSP import unit tests ===")
+if not run_bsp_import_tests():
+    print("ERROR: BSP import unit tests failed")
+    sys.exit(1)

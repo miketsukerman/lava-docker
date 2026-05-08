@@ -1,0 +1,25 @@
+---
+# Minimal synthetic bsp-registry.yaml for unit tests.
+# Follows the bsp-registry-tools v2.0 schema.
+
+specification:
+  version: "2.0"
+
+registry:
+  devices:
+    - slug: imx8mp-lpddr4-evk
+      description: "NXP i.MX8MP LPDDR4 EVK"
+      vendor: advantech
+      soc_vendor: nxp
+      soc_family: imx8
+
+    - slug: rsb3720
+      description: "Advantech RSB-3720"
+      vendor: advantech
+      soc_vendor: nxp
+      soc_family: imx8
+
+    - slug: qemuarm64
+      description: "QEMU ARM64 (emulated)"
+      vendor: qemu
+      soc_vendor: arm

@@ -25,6 +25,12 @@ The following packages are necessary on the host machine:
 
 If you plan to use docker/fastboot tests, you will need probably also to install lava-dispatcher-host.
 
+If you plan to import board definitions from a BSP registry (see [BSP Registry Import](#bsp-registry-import)), you also need:
+```
+pip install bsp-registry-tools>=1.0.0
+```
+Or supply a local `bsp-registry.yaml` file (no tool required).
+
 ## Quickstart
 Example to use lava-docker with only one QEMU device:
 
@@ -531,3 +537,103 @@ You have to add a DNS server on both slave with an healthcheck entry.
 ## Bugs, Contact
 The preferred way to submit bugs are via the github issue tracker
 You can also contact us on #lava-docker on the Libera.chat IRC network
+
+## BSP Registry Import
+
+`lavalab-gen.py` can import board definitions directly from an [Advantech BSP
+registry](https://github.com/Advantech-EECC/bsp-registry) using the
+`--import-bsp` flag.  This is useful when you want to bootstrap a `boards.yaml`
+from a known hardware catalogue rather than writing all device-types by hand.
+
+### How it works
+
+1. Device slugs are read from a `bsp-registry.yaml` file (or fetched from a
+   remote registry via the `bsp` CLI tool).
+2. Lab-specific wiring (UART identifiers, PDU commands, slave assignment) is
+   supplied in a local **overlay** YAML file.
+3. The two are merged and written to a `boards-imported.yaml` fragment.
+4. You then copy/include the generated `boards:` block into your full
+   `boards.yaml` alongside your `masters:` and `slaves:` sections.
+
+### Installation
+
+```bash
+pip install bsp-registry-tools>=1.0.0
+```
+
+The `bsp` tool is only needed when you want to fetch a remote registry
+automatically.  If you supply `--bsp-registry` pointing to a local file, no
+additional tools are required.
+
+### Usage
+
+```bash
+# Parse a local registry file + overlay, write boards-imported.yaml
+./lavalab-gen.py --import-bsp \
+    --bsp-registry bsp-registry.yaml \
+    --overlay boards-overlay.yaml
+
+# Fetch the default Advantech registry via the bsp tool, apply overlay
+./lavalab-gen.py --import-bsp --overlay boards-overlay.yaml
+
+# Fetch a custom remote + branch, skip update (e.g. in CI)
+./lavalab-gen.py --import-bsp \
+    --bsp-remote https://github.com/my-org/bsp-registry.git \
+    --bsp-branch dev --bsp-no-update \
+    --overlay boards-overlay.yaml \
+    --output-boards my-boards.yaml
+```
+
+### Overlay format
+
+The overlay file specifies **which** BSP devices exist in your lab and
+provides the lab-specific wiring that cannot be derived from the registry.
+The `type` field must match a device **slug** from the BSP registry.
+
+```yaml
+# Default slave applied to all boards (can be overridden per board)
+slave: lab-slave-0
+
+boards:
+  # NXP i.MX8MP board wired to an FTDI UART and a PDU controller
+  - type: imx8mp-lpddr4-evk       # BSP registry device slug → LAVA device-type
+    name: imx8mp-lpddr4-evk-01    # optional; auto-generated as <type>-01 if absent
+    pdu_generic:
+      hard_reset_command: /usr/local/bin/pdu-ctrl reset 1
+      power_off_command: /usr/local/bin/pdu-ctrl off 1
+      power_on_command: /usr/local/bin/pdu-ctrl on 1
+    uart:
+      idvendor: 0x0403
+      idproduct: 0x6001
+      serial: AK04TU1X
+
+  # QEMU virtual device (no PDU or UART required)
+  - type: qemuarm64
+    kvm: true
+```
+
+A fully annotated example is provided in
+[`boards-overlay.yaml.example`](boards-overlay.yaml.example).
+
+### Limitations
+
+The BSP registry import **only** generates the `boards:` section.  The
+following must still be provided manually in your full `boards.yaml`:
+
+* `masters:` — LAVA master configuration (credentials, version, ports, …)
+* `slaves:` — LAVA slave / dispatcher configuration
+
+Lab-specific hardware wiring (`uart`, `pdu_generic`, `slave` assignment) cannot
+be inferred from the BSP registry and must be supplied in the overlay file.
+
+### Flag reference
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--import-bsp` | — | Switch to import mode (required) |
+| `--bsp-registry FILE` | — | Path to a local bsp-registry.yaml (skips bsp tool) |
+| `--bsp-remote URL` | Advantech registry | Remote BSP registry git URL |
+| `--bsp-branch BRANCH` | `main` | Remote registry branch |
+| `--bsp-no-update` | — | Skip updating the cached registry clone |
+| `--overlay FILE` | — | Overlay YAML with lab-specific board wiring |
+| `--output-boards FILE` | `boards-imported.yaml` | Destination boards YAML file |

@@ -909,6 +909,11 @@ def main():
         with open(dockcomposeymlpath, 'w') as f:
             yaml.dump(dockcomp, f)
 
+if '--import-bsp' in sys.argv:
+    from bsp_import import run_import_mode
+    run_import_mode(sys.argv)
+    sys.exit(0)
+
 outputdir = "output"
 if len(sys.argv) > 1:
     if sys.argv[1] == '-h' or sys.argv[1] == '--help':

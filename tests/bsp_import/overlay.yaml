@@ -1,0 +1,18 @@
+---
+# Lab-specific overlay used in tests.
+slave: lab-slave-0
+
+boards:
+  - type: imx8mp-lpddr4-evk
+    name: imx8mp-01
+    pdu_generic:
+      hard_reset_command: /usr/bin/pdu reset 1
+      power_off_command: /usr/bin/pdu off 1
+      power_on_command: /usr/bin/pdu on 1
+    uart:
+      idvendor: 0x0403
+      idproduct: 0x6001
+      serial: AK04TU1X
+
+  - type: qemuarm64
+    kvm: true

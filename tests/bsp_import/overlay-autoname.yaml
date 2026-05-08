@@ -1,0 +1,7 @@
+---
+# Overlay used to test auto-name generation (no 'name' field on any board).
+slave: lab-slave-0
+
+boards:
+  - type: qemuarm64
+  - type: qemuarm64

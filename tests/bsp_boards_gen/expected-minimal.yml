@@ -1,0 +1,24 @@
+masters:
+  - name: master1
+    host: local
+    users:
+      - name: admin
+        token: longrandomtokenadmin
+        password: admin
+        superuser: true
+        staff: true
+slaves:
+  - name: lab-slave-0
+    host: local
+    remote_master: master1
+    remote_user: admin
+boards:
+  - name: imx93rom2820a1-01
+    type: imx93rom2820a1
+    slave: lab-slave-0
+  - name: qemuarm64-01
+    type: qemuarm64
+    slave: lab-slave-0
+  - name: qemuarm64-alt-01
+    type: qemuarm64-alt
+    slave: lab-slave-0

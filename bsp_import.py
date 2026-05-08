@@ -268,12 +268,12 @@ def merge_boards(registry_devices, overlay, warn_unknown=True):
         # Work on a copy so we don't mutate caller data
         board = dict(raw_board)
 
-        # Auto-generate name if absent
+        # Always increment the usage counter for this type
+        type_counters[board_type] = type_counters.get(board_type, 0) + 1
+
+        # Auto-generate name if absent, using the current counter value
         if "name" not in board:
-            type_counters[board_type] = type_counters.get(board_type, 0) + 1
             board["name"] = f"{board_type}-{type_counters[board_type]:02d}"
-        else:
-            type_counters[board_type] = type_counters.get(board_type, 0) + 1
 
         # Apply default slave if not set per-board
         if "slave" not in board:

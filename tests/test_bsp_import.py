@@ -24,7 +24,7 @@ REPO_ROOT = os.path.dirname(TESTS_DIR)
 BSP_IMPORT_FIXTURES = os.path.join(TESTS_DIR, "bsp_import")
 sys.path.insert(0, REPO_ROOT)
 
-import bsp_import  # noqa: E402 – must come after sys.path tweak
+import bsp_import  # noqa: E402 — must come after sys.path tweak
 
 
 # ---------------------------------------------------------------------------

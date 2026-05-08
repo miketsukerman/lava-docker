@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import importlib.util
 import subprocess
 import tempfile
 import unittest
@@ -9,11 +10,12 @@ from types import SimpleNamespace
 
 import yaml
 
-import bsp_boards_gen
-
-
 REPO = Path(__file__).resolve().parents[1]
 FIX = REPO / "tests" / "bsp_boards_gen"
+SPEC = importlib.util.spec_from_file_location("bsp_boards_gen_script", REPO / "bsp_boards_gen.py")
+bsp_boards_gen = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+SPEC.loader.exec_module(bsp_boards_gen)
 
 
 def load_yaml(path: Path):

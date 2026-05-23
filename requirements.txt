@@ -1,3 +1,4 @@
 docker
 docker-compose
 pyyaml
+bsp-registry-tools>=1.0.0

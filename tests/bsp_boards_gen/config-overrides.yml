@@ -1,0 +1,23 @@
+masters:
+  - name: cfg-master
+    host: local
+    users:
+      - name: admin
+        token: cfg-token
+        password: cfg-pass
+        superuser: true
+        staff: true
+type_map:
+  qemuarm64: qemu
+  qemuarm64-alt: qemu
+board_defaults:
+  tags:
+    - ci
+board_overrides:
+  by_type:
+    qemu:
+      kvm: true
+  by_slug:
+    imx93rom2820a1:
+      tags:
+        - nxp

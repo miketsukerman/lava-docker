@@ -1,0 +1,22 @@
+specification:
+  version: "2.0"
+registry:
+  devices:
+    - slug: qemuarm64
+      description: "QEMU ARM64"
+      vendor: qemu
+      soc_vendor: arm
+    - slug: qemuarm64-alt
+      description: "QEMU ARM64 alt"
+      vendor: qemu
+      soc_vendor: arm
+    - slug: imx93rom2820a1
+      description: "ROM2820"
+      vendor: advantech
+      soc_vendor: nxp
+    - description: "invalid"
+      vendor: invalid
+      soc_vendor: invalid
+  releases: []
+  features: []
+  bsp: []

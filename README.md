@@ -22,6 +22,7 @@ The following packages are necessary on the host machine:
 * docker
 * docker-compose
 * pyyaml
+* bsp-registry-tools (for `bsp_boards_gen.py`)
 
 If you plan to use docker/fastboot tests, you will need probably also to install lava-dispatcher-host.
 
@@ -388,6 +389,33 @@ Examples: see [boards.yaml.example](boards.yaml.example) or [boards.yaml.minimal
 ### Generate
 ```
 lavalab-gen.py
+```
+
+### Generate `boards.yaml` from `bsp-registry`
+Use `bsp_boards_gen.py` as a standalone pre-step to produce a complete `boards.yaml`.
+The script supports:
+* all devices or filtered subsets (`--device`, `--vendor`, `--soc-vendor`, `--name-regex`)
+* full-file generation (`masters`, `slaves`, `boards`)
+* dedicated board-to-slave mapping by default (one slave per generated board)
+* optional local overrides/config YAML (`--config`)
+* optional merge with an existing template file (`--template`)
+
+Examples:
+```
+# Generate full boards.yaml from local registry file
+./bsp_boards_gen.py --registry /path/to/bsp-registry.yml -o boards.yaml
+
+# Generate only a vendor subset and apply local lab overrides
+./bsp_boards_gen.py \
+  --registry /path/to/bsp-registry.yml \
+  --vendor advantech \
+  --config /path/to/boards-overrides.yml \
+  -o boards.yaml
+```
+
+Then run:
+```
+./lavalab-gen.py boards.yaml
 ```
 
 this script will generate all necessary files in the following locations:

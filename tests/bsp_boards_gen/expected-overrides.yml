@@ -1,0 +1,40 @@
+masters:
+  - name: cfg-master
+    host: local
+    users:
+      - name: admin
+        token: cfg-token
+        password: cfg-pass
+        superuser: true
+        staff: true
+slaves:
+  - name: imx93rom2820a1-01-slave
+    host: local
+    remote_master: cfg-master
+    remote_user: admin
+  - name: qemu-01-slave
+    host: local
+    remote_master: cfg-master
+    remote_user: admin
+  - name: qemu-02-slave
+    host: local
+    remote_master: cfg-master
+    remote_user: admin
+boards:
+  - tags:
+      - nxp
+    name: imx93rom2820a1-01
+    type: imx93rom2820a1
+    slave: imx93rom2820a1-01-slave
+  - tags:
+      - ci
+    kvm: true
+    name: qemu-01
+    type: qemu
+    slave: qemu-01-slave
+  - tags:
+      - ci
+    kvm: true
+    name: qemu-02
+    type: qemu
+    slave: qemu-02-slave

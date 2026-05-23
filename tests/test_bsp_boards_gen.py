@@ -60,8 +60,8 @@ class TestBspBoardsGen(unittest.TestCase):
         args = default_args()
         config = {}
         candidates = bsp_boards_gen.normalize_candidates(fixture_devices(), config, args)
-        defaults = bsp_boards_gen.build_default_master_slave(args)
-        boards = bsp_boards_gen.build_boards(candidates, config, defaults["slaves"][0]["name"])
+        boards = bsp_boards_gen.build_boards(candidates, config)
+        defaults = bsp_boards_gen.build_default_master_slave(args, boards)
         output = bsp_boards_gen.build_output_document({}, config, defaults, boards)
 
         self.assertEqual(output, load_yaml(FIX / "expected-minimal.yml"))
@@ -70,8 +70,8 @@ class TestBspBoardsGen(unittest.TestCase):
         args = default_args()
         config = load_yaml(FIX / "config-overrides.yml")
         candidates = bsp_boards_gen.normalize_candidates(fixture_devices(), config, args)
-        defaults = bsp_boards_gen.build_default_master_slave(args)
-        boards = bsp_boards_gen.build_boards(candidates, config, "cfg-slave")
+        boards = bsp_boards_gen.build_boards(candidates, config)
+        defaults = bsp_boards_gen.build_default_master_slave(args, boards)
         output = bsp_boards_gen.build_output_document({}, config, defaults, boards)
 
         self.assertEqual(output, load_yaml(FIX / "expected-overrides.yml"))
@@ -81,7 +81,16 @@ class TestBspBoardsGen(unittest.TestCase):
         candidates = bsp_boards_gen.normalize_candidates(fixture_devices(), {}, args)
         self.assertEqual(candidates, [])
         with self.assertRaises(ValueError):
-            bsp_boards_gen.build_boards(candidates, {}, "lab-slave-0")
+            bsp_boards_gen.build_boards(candidates, {})
+
+    def test_dedicated_slave_validation_rejects_duplicate_slave(self):
+        boards = [
+            {"name": "qemu-01", "type": "qemu", "slave": "lab-slave-shared"},
+            {"name": "qemu-02", "type": "qemu", "slave": "lab-slave-shared"},
+        ]
+        slaves = [{"name": "lab-slave-shared"}]
+        with self.assertRaises(ValueError):
+            bsp_boards_gen.validate_board_slave_mapping(boards, slaves)
 
     def test_invalid_slug_warning_emitted(self):
         args = default_args()
@@ -124,8 +133,8 @@ class TestBspBoardsGen(unittest.TestCase):
         args = default_args()
         config = {}
         candidates = bsp_boards_gen.normalize_candidates(fixture_devices(), config, args)
-        defaults = bsp_boards_gen.build_default_master_slave(args)
-        boards = bsp_boards_gen.build_boards(candidates, config, defaults["slaves"][0]["name"])
+        boards = bsp_boards_gen.build_boards(candidates, config)
+        defaults = bsp_boards_gen.build_default_master_slave(args, boards)
         output = bsp_boards_gen.build_output_document({}, config, defaults, boards)
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -144,7 +153,7 @@ class TestBspBoardsGen(unittest.TestCase):
             )
             self.assertEqual(ret.returncode, 0, msg=ret.stdout + "\n" + ret.stderr)
             self.assertTrue((out_dir / "local" / "docker-compose.yml").is_file())
-            self.assertTrue((out_dir / "local" / "lab-slave-0" / "devices").is_dir())
+            self.assertTrue((out_dir / "local" / "imx93rom2820a1-01-slave" / "devices").is_dir())
 
 
 if __name__ == "__main__":

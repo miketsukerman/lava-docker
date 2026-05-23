@@ -7,11 +7,6 @@ masters:
         password: cfg-pass
         superuser: true
         staff: true
-slaves:
-  - name: cfg-slave
-    host: local
-    remote_master: cfg-master
-    remote_user: admin
 type_map:
   qemuarm64: qemu
   qemuarm64-alt: qemu

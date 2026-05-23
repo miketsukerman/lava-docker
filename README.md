@@ -396,6 +396,7 @@ Use `bsp_boards_gen.py` as a standalone pre-step to produce a complete `boards.y
 The script supports:
 * all devices or filtered subsets (`--device`, `--vendor`, `--soc-vendor`, `--name-regex`)
 * full-file generation (`masters`, `slaves`, `boards`)
+* dedicated board-to-slave mapping by default (one slave per generated board)
 * optional local overrides/config YAML (`--config`)
 * optional merge with an existing template file (`--template`)
 

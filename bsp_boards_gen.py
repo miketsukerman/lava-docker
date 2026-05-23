@@ -179,7 +179,7 @@ def normalize_candidates(devices: List[Any], config: Dict[str, Any], args: argpa
     return candidates
 
 
-def build_boards(candidates: List[BoardCandidate], config: Dict[str, Any], default_slave: str) -> List[Dict[str, Any]]:
+def build_boards(candidates: List[BoardCandidate], config: Dict[str, Any]) -> List[Dict[str, Any]]:
     board_defaults = config.get("board_defaults", {})
     board_overrides = config.get("board_overrides", {})
     by_type = board_overrides.get("by_type", {}) if isinstance(board_overrides, dict) else {}
@@ -205,7 +205,7 @@ def build_boards(candidates: List[BoardCandidate], config: Dict[str, Any], defau
         board["name"] = board_name
         board["type"] = item.board_type
         if "slave" not in board:
-            board["slave"] = default_slave
+            board["slave"] = f"{board_name}-slave"
 
         boards.append(board)
 
@@ -215,7 +215,7 @@ def build_boards(candidates: List[BoardCandidate], config: Dict[str, Any], defau
     return boards
 
 
-def build_default_master_slave(args: argparse.Namespace) -> Dict[str, List[Dict[str, Any]]]:
+def build_default_master_slave(args: argparse.Namespace, boards: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
     master_name = args.master_name
     slave_remote_master = args.slave_remote_master or master_name
     slave_remote_user = args.slave_remote_user or args.master_user
@@ -234,16 +234,57 @@ def build_default_master_slave(args: argparse.Namespace) -> Dict[str, List[Dict[
         ],
     }
 
-    slave = {
-        "name": args.slave_name,
-        "host": args.slave_host,
-        "remote_master": slave_remote_master,
-        "remote_user": slave_remote_user,
-    }
-    if args.slave_dispatcher_ip:
-        slave["dispatcher_ip"] = args.slave_dispatcher_ip
+    seen = set()
+    slaves = []
+    for board in boards:
+        slave_name = board.get("slave")
+        if not slave_name:
+            raise ValueError(f"Board '{board.get('name', '<unknown>')}' has no slave assigned")
+        if slave_name in seen:
+            raise ValueError(f"Dedicated slave mapping violation: duplicate slave '{slave_name}'")
+        seen.add(slave_name)
+        slave = {
+            "name": slave_name,
+            "host": args.slave_host,
+            "remote_master": slave_remote_master,
+            "remote_user": slave_remote_user,
+        }
+        if args.slave_dispatcher_ip:
+            slave["dispatcher_ip"] = args.slave_dispatcher_ip
+        slaves.append(slave)
 
-    return {"masters": [master], "slaves": [slave]}
+    if not slaves:
+        raise ValueError("No slaves generated; no boards available for dedicated slave assignment")
+
+    return {"masters": [master], "slaves": slaves}
+
+
+def validate_board_slave_mapping(boards: List[Dict[str, Any]], slaves: List[Dict[str, Any]]) -> None:
+    if not boards:
+        raise ValueError("boards must be a non-empty list")
+    slave_names = set()
+    for slave in slaves:
+        name = slave.get("name")
+        if not name:
+            raise ValueError("Each slave entry must have a name")
+        slave_names.add(name)
+
+    seen_board_slaves = set()
+    for board in boards:
+        board_name = board.get("name", "<unknown>")
+        board_slave = board.get("slave")
+        if not board_slave:
+            raise ValueError(f"Board '{board_name}' has no slave assigned")
+        if board_slave in seen_board_slaves:
+            raise ValueError(
+                f"Dedicated slave mapping violation: slave '{board_slave}' is assigned to multiple boards"
+            )
+        if board_slave not in slave_names:
+            raise ValueError(
+                f"Board '{board_name}' references missing slave '{board_slave}'. "
+                "Provide matching slave entries in config/template or rely on defaults."
+            )
+        seen_board_slaves.add(board_slave)
 
 
 def build_output_document(
@@ -267,6 +308,20 @@ def build_output_document(
     if not isinstance(slaves, list) or not slaves:
         raise ValueError("slaves must be a non-empty list")
 
+    default_master_name = None
+    if defaults.get("masters"):
+        default_master_name = defaults["masters"][0].get("name")
+    effective_master_name = masters[0].get("name")
+    if default_master_name and effective_master_name and default_master_name != effective_master_name:
+        normalized_slaves = []
+        for slave in slaves:
+            updated = copy.deepcopy(slave)
+            if updated.get("remote_master") in (None, default_master_name):
+                updated["remote_master"] = effective_master_name
+            normalized_slaves.append(updated)
+        slaves = normalized_slaves
+
+    validate_board_slave_mapping(boards, slaves)
     data["masters"] = masters
     data["slaves"] = slaves
     data["boards"] = boards
@@ -290,9 +345,8 @@ def main() -> int:
     devices = client.load_devices()
     candidates = normalize_candidates(devices, config, args)
 
-    defaults = build_default_master_slave(args)
-    default_slave = defaults["slaves"][0]["name"]
-    boards = build_boards(candidates, config, default_slave=default_slave)
+    boards = build_boards(candidates, config)
+    defaults = build_default_master_slave(args, boards)
 
     output_data = build_output_document(template_data, config, defaults, boards)
 

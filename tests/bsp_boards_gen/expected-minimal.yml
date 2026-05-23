@@ -8,17 +8,25 @@ masters:
         superuser: true
         staff: true
 slaves:
-  - name: lab-slave-0
+  - name: imx93rom2820a1-01-slave
+    host: local
+    remote_master: master1
+    remote_user: admin
+  - name: qemuarm64-01-slave
+    host: local
+    remote_master: master1
+    remote_user: admin
+  - name: qemuarm64-alt-01-slave
     host: local
     remote_master: master1
     remote_user: admin
 boards:
   - name: imx93rom2820a1-01
     type: imx93rom2820a1
-    slave: lab-slave-0
+    slave: imx93rom2820a1-01-slave
   - name: qemuarm64-01
     type: qemuarm64
-    slave: lab-slave-0
+    slave: qemuarm64-01-slave
   - name: qemuarm64-alt-01
     type: qemuarm64-alt
-    slave: lab-slave-0
+    slave: qemuarm64-alt-01-slave
